@@ -27,9 +27,7 @@ public class ScanTest extends SimpleDbTestBase {
             throws IOException, DbException, TransactionAbortedException {
         for (int columns : columnSizes) {
             for (int rows : rowSizes) {
-            	
                 ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>();
-                
                 HeapFile f = SystemTestUtil.createRandomHeapFile(columns, rows, null, tuples);
                 SystemTestUtil.matchTuples(f, tuples);
                 Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
@@ -67,6 +65,30 @@ public class ScanTest extends SimpleDbTestBase {
         }
         scan.close();
         Database.getBufferPool().transactionComplete(tid);
+        
+        Database.resetBufferPool(BufferPool.DEFAULT_PAGES);
+        
+        // create file with lots of tuples. count 'em, rewind, count 'em again
+        tuples = new ArrayList<ArrayList<Integer>>();
+        int numtuples = 10200;
+		f = SystemTestUtil.createRandomHeapFile(1, numtuples, 32, null, tuples);
+		scan = new SeqScan(new TransactionId(), f.getId(), "table2");
+		
+		int count = 0;
+        scan.open();
+        while (scan.hasNext()) {
+        	scan.next();
+        	count++;
+        }
+        assertEquals(numtuples,count); // counting the first time
+        
+        scan.rewind();
+        count = 0;
+        while (scan.hasNext()) {
+        	scan.next();
+        	count++;
+        }
+        assertEquals(numtuples,count); // counting the second time
     }
 
     /** Test getAlias, getTableName, and that TupleDesc has alias correctly  */
@@ -118,10 +140,23 @@ public class ScanTest extends SimpleDbTestBase {
         SystemTestUtil.matchTuples(table, tuples);
         assertEquals(PAGES, table.readCount);
         table.readCount = 0;
-
+        
         // Scan the table again: all pages should be cached
         SystemTestUtil.matchTuples(table, tuples);
         assertEquals(0, table.readCount);
+        
+        // create a different table (same size) to test HeapFile iterator
+        f = SystemTestUtil.createRandomHeapFileUnopened(1, 992*PAGES, 1000, null, tuples);
+        td = Utility.getTupleDesc(1);
+        table = new InstrumentedHeapFile(f, td);
+        Database.getCatalog().addTable(table, SystemTestUtil.getUUID());
+        
+        // Opening the HeapFile's iterator shouldn't result in all pages being read
+        TransactionId tid = new TransactionId();
+        DbFileIterator iter = table.iterator(tid);
+        iter.open();
+        Database.getBufferPool().transactionComplete(tid);
+        assertTrue("HeapFile iterator should not read all pages in open()",PAGES != table.readCount);
     }
 
     /** Make test compatible with older version of ant. */

@@ -24,7 +24,7 @@ public class TupleDescTest extends SimpleDbTestBase {
         // test td1.combine(td2)
         td3 = TupleDesc.merge(td1, td2);
         assertEquals(3 , td3.numFields());
-        assertEquals(3 * Type.INT_TYPE.getLen(), td3.getSize());
+        assertEquals(3 * Type.INT_TYPE.getSizeInBytes(), td3.getSizeInBytes());
         for (int i = 0; i < 3; ++i)
             assertEquals(Type.INT_TYPE, td3.getFieldType(i));
         assertEquals(combinedStringArrays(td1, td2, td3), true);
@@ -32,7 +32,7 @@ public class TupleDescTest extends SimpleDbTestBase {
         // test td2.combine(td1)
         td3 = TupleDesc.merge(td2, td1);
         assertEquals(3 , td3.numFields());
-        assertEquals(3 * Type.INT_TYPE.getLen(), td3.getSize());
+        assertEquals(3 * Type.INT_TYPE.getSizeInBytes(), td3.getSizeInBytes());
         for (int i = 0; i < 3; ++i)
             assertEquals(Type.INT_TYPE, td3.getFieldType(i));
         assertEquals(combinedStringArrays(td2, td1, td3), true);
@@ -40,7 +40,7 @@ public class TupleDescTest extends SimpleDbTestBase {
         // test td2.combine(td2)
         td3 = TupleDesc.merge(td2, td2);
         assertEquals(4 , td3.numFields());
-        assertEquals(4 * Type.INT_TYPE.getLen(), td3.getSize());
+        assertEquals(4 * Type.INT_TYPE.getSizeInBytes(), td3.getSizeInBytes());
         for (int i = 0; i < 4; ++i)
             assertEquals(Type.INT_TYPE, td3.getFieldType(i));
         assertEquals(combinedStringArrays(td2, td2, td3), true);
@@ -122,14 +122,14 @@ public class TupleDescTest extends SimpleDbTestBase {
     }    
 
     /**
-     * Unit test for TupleDesc.getSize()
+     * Unit test for TupleDesc.getSizeInBytes()
      */
     @Test public void getSize() {
         int[] lengths = new int[] { 1, 2, 1000 };
 
         for (int len: lengths) {
             TupleDesc td = Utility.getTupleDesc(len);
-            assertEquals(len * Type.INT_TYPE.getLen(), td.getSize());
+            assertEquals(len * Type.INT_TYPE.getSizeInBytes(), td.getSizeInBytes());
         }
     }
 
@@ -157,7 +157,6 @@ public class TupleDescTest extends SimpleDbTestBase {
         assertFalse(singleInt.equals(new Object()));
 
         assertTrue(singleInt.equals(singleInt));
-        
         assertTrue(singleInt.equals(singleInt2));
         assertTrue(singleInt2.equals(singleInt));
         assertTrue(intString.equals(intString));

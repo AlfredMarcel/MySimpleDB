@@ -3,6 +3,7 @@ package simpledb;
 import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.systemtest.SystemTestUtil;
 
+import java.io.File;
 import java.util.*;
 import org.junit.After;
 import org.junit.Before;
@@ -91,12 +92,18 @@ public class HeapFileReadTest extends SimpleDbTestBase {
                 null);
 
         DbFileIterator it = smallFile.iterator(tid);
+        
         // Not open yet
-        assertFalse(it.hasNext());
+        //assertFalse(it.hasNext());
+        try {
+            it.hasNext();
+            fail("expected exception");
+        } catch (IllegalStateException e) {
+        }
         try {
             it.next();
             fail("expected exception");
-        } catch (NoSuchElementException e) {
+        } catch (IllegalStateException e2) {
         }
 
         it.open();
@@ -123,12 +130,65 @@ public class HeapFileReadTest extends SimpleDbTestBase {
         try {
             it.next();
             fail("expected exception");
-        } catch (NoSuchElementException e) {
+        } catch (IllegalStateException e) {
         }
         // close twice is harmless
         it.close();
     }
+    
+    @Test
+    public void testIteratorEmptyPages() throws Exception {
+    	int numTuples = 992; // fills one page
+    	
+    	// make files with two and three full pages
+        ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>();
+    	File twoFullPages = SystemTestUtil.createRandomHeapFileUnopened(1, 2*numTuples, 1000, null, tuples);
+    	File threeFullPages = SystemTestUtil.createRandomHeapFileUnopened(1, 3*numTuples, 1000, null, tuples);
 
+    	// make a blank page for inserting 
+    	byte[] blankData = HeapPage.createEmptyPageData();
+    	
+    	// make a three-page HeapFile: full, full, blank
+    	java.io.RandomAccessFile raf = new java.io.RandomAccessFile(twoFullPages,"rw");
+    	raf.seek(2*BufferPool.getPageSize());
+    	raf.write(blankData);
+    	raf.close();
+    	HeapFile hf = Utility.openHeapFile(1, twoFullPages);
+    	assertEquals(3,hf.numPages()); // HeapFile should recognize that there are three pages
+    	
+    	// iterator should get all tuples without failing
+    	DbFileIterator it = hf.iterator(tid);
+    	int count = 0;
+    	it.open();
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            count += 1;
+        }
+        assertEquals(2*numTuples, count);
+        it.close();
+        
+        // now try the iterator with a file as: blank, full, blank
+        raf = new java.io.RandomAccessFile(threeFullPages,"rw");
+    	raf.write(blankData);
+    	raf.seek(2*BufferPool.getPageSize());
+    	raf.write(blankData);
+    	raf.close();
+    	HeapFile hf2 = Utility.openHeapFile(1, threeFullPages);
+    	assertEquals(3,hf2.numPages()); // HeapFile should recognize that there are three pages
+    	
+    	// iterator should get all tuples without failing
+    	it = hf2.iterator(tid);
+    	count = 0;
+    	it.open();
+        while (it.hasNext()) {
+            assertNotNull(it.next());
+            count += 1;
+        }
+        assertEquals(numTuples, count);
+        it.close();
+        
+    }
+    
     /**
      * JUnit suite target
      */

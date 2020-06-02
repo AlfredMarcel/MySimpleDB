@@ -174,13 +174,12 @@ public class TupleDesc implements Serializable {
      *         Note that tuples from a given TupleDesc are of a fixed size.
      * @see Type#getSizeInBytes
      */
-    //测试代码里是getSize()，方法名我改一下
     
-    public int getSize() {
+    public int getSizeInBytes() {
         // some code goes here
     	int res=0;
     	for(int i=0;i<TDList.size();i++) {
-    		res+=(TDList.get(i).fieldType).getLen();
+    		res+=(TDList.get(i).fieldType).getSizeInBytes();
     		
     	}
         return res;
@@ -230,7 +229,7 @@ public class TupleDesc implements Serializable {
         // some code goes here
     	if(o instanceof TupleDesc) {
     		TupleDesc temp=(TupleDesc)o;
-    		if(temp.getSize()==this.getSize()){
+    		if(temp.getSizeInBytes()==this.getSizeInBytes()){
     			for(int i=0;i<temp.numFields()-1;i++) {
     				if(!this.getFieldType(i).equals(temp.getFieldType(i))) {
     					return false;

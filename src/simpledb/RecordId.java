@@ -33,7 +33,7 @@ public class RecordId implements Serializable {
      * 返回元组id
      * @return the tuple number this RecordId references.
      */
-    public int tupleno() {
+    public int getTupleNumber() {
         // some code goes here
         return tupleId;
     }
@@ -59,7 +59,7 @@ public class RecordId implements Serializable {
         // some code goes here
     	if(o instanceof RecordId) {
     		RecordId temp=(RecordId)o;
-    		if(this.tupleno()==temp.tupleno()) {
+    		if(this.getTupleNumber()==temp.getTupleNumber()) {
     			return true;
     		}else {
     			return false;
@@ -79,7 +79,7 @@ public class RecordId implements Serializable {
     @Override
     public int hashCode() {
         // some code goes here
-    	return Integer.parseInt(String.valueOf(this.getPageId().hashCode())+String.valueOf(this.tupleno()));
+    	return Integer.parseInt(String.valueOf(this.getPageId().hashCode())+String.valueOf(this.getTupleNumber()));
     	//尚未理解
         //throw new UnsupportedOperationException("implement this");
 

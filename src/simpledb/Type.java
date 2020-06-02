@@ -11,7 +11,7 @@ import java.io.*;
 public enum Type implements Serializable {
     INT_TYPE() {
         @Override
-        public int getLen() {
+        public int getSizeInBytes() {
             return 4;
         }
 
@@ -26,7 +26,7 @@ public enum Type implements Serializable {
 
     }, STRING_TYPE() {
         @Override
-        public int getLen() {
+        public int getSizeInBytes() {
             return STRING_LEN+4;
         }
 
@@ -49,11 +49,9 @@ public enum Type implements Serializable {
   /**
    * @return the number of bytes required to store a field of this type.
    */
-    //由于测试代码里调的是getLen()，所以我改一下
-    //原先：
-    //public abstract int getSizeInBytes();
-    //现在
-    public abstract int getLen();
+    
+    public abstract int getSizeInBytes();
+    
     
   /**
    * @return a Field object of the same type as this object that has contents

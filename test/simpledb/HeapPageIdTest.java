@@ -26,10 +26,10 @@ public class HeapPageIdTest extends SimpleDbTestBase {
     }
 
     /**
-     * Unit test for HeapPageId.pageno()
+     * Unit test for HeapPageId.getPageNumber()
      */
     @Test public void pageno() {
-        assertEquals(1, pid.pageNumber());
+        assertEquals(1, pid.getPageNumber());
     }
 
     /**

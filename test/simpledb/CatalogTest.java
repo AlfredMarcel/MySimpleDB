@@ -3,6 +3,7 @@ package simpledb;
 import static org.junit.Assert.*;
 
 import java.util.NoSuchElementException;
+import java.util.Random;
 
 import junit.framework.Assert;
 import junit.framework.JUnit4TestAdapter;
@@ -15,14 +16,17 @@ import simpledb.systemtest.SimpleDbTestBase;
 import simpledb.systemtest.SystemTestUtil;
 
 public class CatalogTest extends SimpleDbTestBase {
-    private static String name = "test";
-	private String nameThisTestRun;
+    private static Random r = new Random();
+    private static String name = SystemTestUtil.getUUID();
+    private static int id1 = r.nextInt();
+    private static int id2 = r.nextInt();
+    private String nameThisTestRun;
     
     @Before public void addTables() throws Exception {
         Database.getCatalog().clear();
-		nameThisTestRun = SystemTestUtil.getUUID();
-        Database.getCatalog().addTable(new SkeletonFile(-1, Utility.getTupleDesc(2)), nameThisTestRun);
-        Database.getCatalog().addTable(new SkeletonFile(-2, Utility.getTupleDesc(2)), name);
+	nameThisTestRun = SystemTestUtil.getUUID();
+        Database.getCatalog().addTable(new SkeletonFile(id1, Utility.getTupleDesc(2)), nameThisTestRun);
+        Database.getCatalog().addTable(new SkeletonFile(id2, Utility.getTupleDesc(2)), name);
     }
 
     /**
@@ -30,7 +34,7 @@ public class CatalogTest extends SimpleDbTestBase {
      */
     @Test public void getTupleDesc() throws Exception {
         TupleDesc expected = Utility.getTupleDesc(2);
-        TupleDesc actual = Database.getCatalog().getTupleDesc(-1);
+        TupleDesc actual = Database.getCatalog().getTupleDesc(id1);
 
         assertEquals(expected, actual);
     }
@@ -39,8 +43,8 @@ public class CatalogTest extends SimpleDbTestBase {
      * Unit test for Catalog.getTableId()
      */
     @Test public void getTableId() {
-        assertEquals(-2, Database.getCatalog().getTableId(name));
-        assertEquals(-1, Database.getCatalog().getTableId(nameThisTestRun));
+        assertEquals(id2, Database.getCatalog().getTableId(name));
+        assertEquals(id1, Database.getCatalog().getTableId(nameThisTestRun));
         
         try {
             Database.getCatalog().getTableId(null);
@@ -62,44 +66,66 @@ public class CatalogTest extends SimpleDbTestBase {
      */
 
     @Test public void getDatabaseFile() throws Exception {
-        DbFile f = Database.getCatalog().getDatabaseFile(-1);
+        DbFile f = Database.getCatalog().getDatabaseFile(id1);
 
         // NOTE(ghuo): we try not to dig too deeply into the DbFile API here; we
         // rely on HeapFileTest for that. perform some basic checks.
-        assertEquals(-1, f.getId());
+        assertEquals(id1, f.getId());
     }
+
     /**
-     * Unit test for Catalog.getTableName() 
+     * Check that duplicate names are handled correctly
+     */
+    @Test public void handleDuplicateNames() throws Exception {
+	int id3 = r.nextInt();
+	Database.getCatalog().addTable(new SkeletonFile(id3, Utility.getTupleDesc(2)), name);
+	assertEquals(id3, Database.getCatalog().getTableId(name));
+    }
+    
+    /**
+     * Check that duplicate file ids are handled correctly
+     */
+    @Test public void handleDuplicateIds() throws Exception {
+	String newName = SystemTestUtil.getUUID();
+	DbFile f = new SkeletonFile(id2, Utility.getTupleDesc(2));
+	Database.getCatalog().addTable(f, newName);
+	assertEquals(newName, Database.getCatalog().getTableName(id2));
+	assertEquals(f, Database.getCatalog().getDatabaseFile(id2));
+    }
+
+    /**
+     * Unit test for Catalog.getTableName()
      */
     @Test public void getTableName() {
-    	SkeletonFile file = new SkeletonFile(-3, Utility.getTupleDesc(2));
+    	int id4 = r.nextInt();
+    	SkeletonFile file = new SkeletonFile(id4, Utility.getTupleDesc(2));
     	Database.getCatalog().addTable(file,"MyTableName");
     	
-    	assertEquals("MyTableName",Database.getCatalog().getTableName(-3));
+    	assertEquals("MyTableName",Database.getCatalog().getTableName(id4));
     }
     
     /** Unit test for Catalog.addTable() duplicates
      * String comparisons using new String() should hopefully catch == vs. equals() bugs 
      */
+    /*
     @Test public void updateTable() {
-	
 	SkeletonFile f1 = new SkeletonFile(-4, Utility.getTupleDesc(2));
 	
-	// add table with id and name
-	String tableName1 = "OldName";
-	Database.getCatalog().addTable(f1, tableName1);
+    	// add table with id and name
+    	String tableName1 = "OldName";
+    	Database.getCatalog().addTable(f1, tableName1);
 	
-	// add table with same id, this time with name (should update or override previous entry)
-	Database.getCatalog().addTable(f1,"NewName");
+    	// add table with same id, this time with name (should update or override previous entry)
+    	Database.getCatalog().addTable(f1,"NewName");
 	
-	// check that lookups by id and the new name yield the same file
-	// use new String() to force a new String object in memory
-	String newName = new String("NewName");
-	assertEquals(newName,Database.getCatalog().getTableName(f1.getId()));
-	assertEquals(f1.getId(),Database.getCatalog().getTableId(newName));
+    	// check that lookups by id and the new name yield the same file
+    	// use new String() to force a new String object in memory
+    	String newName = new String("NewName");
+    	assertEquals(newName,Database.getCatalog().getTableName(f1.getId()));
+     	assertEquals(f1.getId(),Database.getCatalog().getTableId(newName));
 
     }
-    
+    */
     /**
      * Unit test for Catalog.clear()
      */
@@ -113,7 +139,6 @@ public class CatalogTest extends SimpleDbTestBase {
 	    // should get here
 	}
     }
-
 
     /**
      * JUnit suite target
